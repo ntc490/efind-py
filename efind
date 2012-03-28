@@ -287,10 +287,17 @@ class Finder:
             spec = PathSpec(path)
             self.path_specs.append(spec)
         for sub_path in sub_paths:
-            if os.path.split(sub_path)[0]:
-                sys.stderr.write("cannot add sub-directories of subdirectories - skipping: %s)\n" % sub_path)
-                continue
-            spec.include(sub_path)
+            if os.path.dirname(sub_path):
+                # If the addition includes multiple directories, call self
+                # recursively at each level
+                implicit_dir = sub_path.split(os.sep)[0]
+                complex_path = os.path.join(*sub_path.split(os.sep)[1:])
+                new_path = os.path.join(path, implicit_dir)
+                current_new_dir = implicit_dir.split(os.sep)[0]
+                spec.include(current_new_dir)
+                self._include(new_path, [complex_path])
+            else:
+                spec.include(sub_path)
 
     def _exclude(self, path, sub_paths):
         spec = self._get_path_spec(self.path_specs, path)
@@ -298,7 +305,7 @@ class Finder:
             spec = PathSpec(path)
             self.path_specs.append(spec)
         for sub_path in sub_paths:
-            if os.path.split(sub_path)[0]:
+            if os.path.dirname(sub_path):
                 sys.stderr.write("cannot add sub-directories of subdirectories - skipping: %s)\n" % sub_path)
                 continue
             spec.exclude(sub_path)
@@ -380,7 +387,7 @@ def load_config(finder, filename):
     # Allow separation of commands by semi-colon
     config = re.sub(';', '\n', config)
     for line in config.splitlines():
-        if re.match('^#', line):
+        if re.match('^#', line) or len(line) < 1:
             continue
         finder.config(line)
     return 0

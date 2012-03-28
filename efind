@@ -1,0 +1,414 @@
+#!/usr/bin/python
+import re
+import sets
+import os
+import sys
+import optparse
+"""
+Enhanced Find Utility
+Copyright (C) 2012 Nathan Crapo
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+Contact me at:
+nathan underscore crapo at yahoo mail
+"""
+
+class FileExtensionFilter:
+    def __init__(self, extensions=None, name=''):
+        """
+        Create a new object to filter files based on their extension name.  Object must have
+        a name.  Can be crated with a list of extensions.  Extensions can be added later.
+        """
+        self.name = name
+        self.regex = None
+        self.extensions = sets.Set()
+        if extensions is not None:
+            self.add_extensions(extensions)
+        else:
+            self.clear()
+
+    def add_extensions(self, extensions):
+        """
+        Add an array of extensions or a string with extensions
+        separated by whitespace to the filter.  Leave 'dot' out of
+        expressions.
+        """
+        if isinstance(extensions, str):
+            extensions = extensions.split()
+
+        # remove preceding dots from extension name
+        clean_extension_list = [re.sub(r'^\.*', '', e) for e in extensions]
+        self.extensions.update(clean_extension_list)
+        self._compile_extension_regex()
+
+    def clear(self):
+        """
+        Clear the list of extensions so the filter is empty and allows
+        all files.
+        """
+        self.extensions = sets.Set()
+        self._compile_allow_all_regex()
+
+    def is_match(self, filename):
+        """
+        Determine if a filename has one of the desired extensions.
+        """
+        return self.regex.search(filename)
+
+    def __repr__(self):
+        description =  "%s" % (" ".join(self.extensions))
+        return description
+
+    def __str__(self):
+        description =  "%s: %s" % (self.name, ", ".join(self.extensions))
+        return description
+
+    def _compile_extension_regex(self):
+        # Compiling the expression should make it quicker
+        expressions = ["\\.%s$" % e for e in self.extensions]
+        expression = '(' + '|'.join(expressions) + ')'
+        self.regex = re.compile(expression)
+
+    def _compile_allow_all_regex(self):
+        self.regex = re.compile(r'.*')
+
+
+"""
+Common groups of extensions for users to leverage
+"""
+pics = FileExtensionFilter(extensions="""
+ai bmp dds drw dxf eps gif icn ico icon
+indd j2c j2k jfi jfif jif jiff jng jp2
+jpc jpe jpeg jpf jpg jpx jtf mng pct pdn
+png psd psp svg tga tif tiff xbm
+""", name='pics')
+pictures = FileExtensionFilter(pics.extensions, 'pictures')
+playlist = FileExtensionFilter("""
+asx b4s m3u m3u8 pls wax
+wmx wpl xspf
+""", name='playlist')
+archive = FileExtensionFilter("""
+7z arc arj bzip2 cab chm cpio gz gzip iso
+lzh msi rar rpm sea sit sitx tar wim z zip
+""", name='archive')
+audio = FileExtensionFilter("""
+aac ac3 aif aiff ape atrac au dss dts dvf
+flac gsm iff m4a m4p mid midi mka mp1 mp2
+mp3 mpa msv ogg oma omg ra ram vox wav wma
+""", name='audio')
+documents = FileExtensionFilter("""
+abw doc docx dot mdb mde odb odc odf odg
+odi odm odp ods odt pdf pot ppt pptx ps
+qxd qxp rtf xls xlsx xlt
+""", name='documents')
+executable = FileExtensionFilter("""
+bat com exe
+""", name='executable')
+programming = FileExtensionFilter("""
+adb ada ads asm bas bb bmx c cbl cc cgi
+cls cob cpp cs csproj cxx d dpr e efs
+egt el f f77 f90 for frm frx ftn ged gm6
+gmd gmk gmi h hpp hs hxx inc java js
+jsp l lisp m m4 mi n p pas php php3
+php4 php5 phps phtml piv pl pm pp prg
+py rc rc2 resx s sce sci scm skb skc
+skd skf skg ski skk skm sko skp skq sks
+skt skz sin spin stk vap vb vbg vbp
+vbproj vbs vcproj vdproj vip y
+""", name='programming')
+cplus_plus = FileExtensionFilter("""
+cpp cxx h hpp
+""", name='c++')
+c = FileExtensionFilter("""
+c h
+""", name='C')
+video = FileExtensionFilter("""
+3gp asf avi divx dv flv m1v m2ts m2v m4v
+mkv mov mp4 mpe mpeg mpg mts ogm qt rm
+ts vob wmv
+""", name='video')
+web = FileExtensionFilter("""
+asp chm css dhtml htm html jhtml js jsp
+jspx mht mhtml php php3 php4 php5 phtml
+rhtml rjs sht shtm shtml xht xhtml
+""", name='web')
+text = FileExtensionFilter("""
+log txt
+""", name='text')
+
+FILE_TYPES = [pics, pictures, playlist, archive, audio,
+              documents, executable, programming,
+              cplus_plus, c, video, web, text]
+
+
+class PathSpec:
+    """
+    Path Specifications apply to a _single_ directory.  The 'include'
+    or 'exclude' files and/or sub-directories.
+    """
+    def __init__(self, directory):
+        self.recurse = True
+        self.file_inclusions = sets.Set()
+        self.file_exclusions = sets.Set()
+        self.dir_inclusions = sets.Set()
+        self.dir_exclusions = sets.Set()
+        self.directory = directory
+
+    def include(self, path):
+        """
+        Inlude a directory or file.  Path must not be more than a
+        single level deep.  The object's directory defines the
+        location.
+        """
+        full_path = os.path.join(self.directory, path)
+        if os.path.isdir(full_path):
+            self._include_dir(path)
+        else:
+            self._include_file(path)
+
+    def exclude(self, path):
+        """
+        Exclude a directory or file.  Path must not be more than a
+        single level deep.  The object's directory defines the
+        location.
+        """
+        full_path = os.path.join(self.directory, path)
+        if os.path.isdir(full_path):
+            self._exclude_dir(path)
+        else:
+            self._exclude_file(path)
+
+    def _include_dir(self, path):
+        self.dir_inclusions.update([path])
+
+    def _include_file(self, path):
+        self.file_inclusions.update([path])
+
+    def _exclude_dir(self, path):
+        self.dir_exclusions.update([path])
+
+    def _exclude_file(self, path):
+        self.file_exclusions.update([path])
+
+
+class Finder:
+    """
+    This class is used to find files and directories.  It filters
+    output based on PathSpec objects and a single global file
+    extension filter.  Use text commands to configure the Finder
+    object and then call the find method.
+    """
+    def __init__(self, root):
+        """
+        The root path must be known at object creation time so the
+        PathSpec objects can be properly created when the config()
+        method is called.
+        """
+        self.root = root
+        self.path_specs = []
+        self.extension_filter = None
+
+    def config(self, command):
+        """
+
+        Pass a command or sequence of commands delimited by semicolons
+        to this function to create PathSpecs and set the global
+        filter.  Use of the 'at' keyword can be used to set the path
+        where the PathSpec takes effect.  Use the 'include' and
+        'exclude' command to include or exclude directories and files.
+        If you 'include' a file or directory, any unspecified files
+        will be ignored.  If you 'exclude' a file or directory, all
+        files or directories except those specified will be included.
+        Multiple single level paths may be included or excluded with
+        one command.  Use spaces to separate entries.
+
+        A few examples are shown below:
+
+        at . include drivers include documentation
+        include drivers include
+        at src/common exclude i2c-base.c
+        filter pictures
+        filter programming;at src include foo bar
+        """
+        command_words = command.split()
+        command_word_offset = 0
+        if len(command_words) < 2:
+            sys.stderr.write("command too short: %s\n" % command)
+            return -1
+        directory = ""
+        if command_words[0] == 'at':
+            directory = command_words[1]
+            command_word_offset = 2
+            # Command must be longer when the 'at' keyword is used
+            if len(command_words) < 4:
+                sys.stderr.write("command too short: %s\n" % command)                
+                return -1
+        # PathSpec objects must include the root they reference
+        directory = os.path.join(self.root, directory)
+        directory = self._clean_path(directory)
+        if command_words[command_word_offset] == 'include':
+            self._include(directory, command_words[command_word_offset + 1:])
+        elif command_words[command_word_offset] == 'exclude':
+            self._exclude(directory, command_words[command_word_offset + 1:])
+        elif command_words[command_word_offset] == 'filter':
+            self._set_filter(command_words[command_word_offset + 1])
+        else:
+            sys.stderr.write("invalid command: %s\n" % command)
+
+    def find(self):
+        """
+        Start locating files or directories using the PathSpec and
+        global filter and print results to stdout.
+        """
+        path_specs = self.path_specs[:]
+        for root, directories, files in os.walk(self.root, topdown=True):
+            path_spec_name = self._clean_path(root)
+            path_spec = self._get_path_spec(path_specs, path_spec_name)
+            if path_spec:
+                self._filter_dirs(path_spec, directories)
+                self._filter_files(path_spec, files)
+            self._print_files(root, files)
+
+    def _include(self, path, sub_paths):
+        spec = self._get_path_spec(self.path_specs, path)
+        if not spec:
+            spec = PathSpec(path)
+            self.path_specs.append(spec)
+        for sub_path in sub_paths:
+            if os.path.split(sub_path)[0]:
+                sys.stderr.write("cannot add sub-directories of subdirectories - skipping: %s)\n" % sub_path)
+                continue
+            spec.include(sub_path)
+
+    def _exclude(self, path, sub_paths):
+        spec = self._get_path_spec(self.path_specs, path)
+        if not spec:
+            spec = PathSpec(path)
+            self.path_specs.append(spec)
+        for sub_path in sub_paths:
+            if os.path.split(sub_path)[0]:
+                sys.stderr.write("cannot add sub-directories of subdirectories - skipping: %s)\n" % sub_path)
+                continue
+            spec.exclude(sub_path)
+
+    def _clean_path(self, path):
+        if not path:
+            path = "."
+        # Pull any trailing dir separators off
+        path = re.sub('%c$' % os.sep, '', path)
+        return path
+
+    def _set_filter(self, filter_name):
+        for filter in FILE_TYPES:
+            if filter.name == filter_name:
+                self.extension_filter = filter
+
+    def _print_files(self, root, files):
+        for f in files:
+            if self.extension_filter and not self.extension_filter.is_match(f):
+                continue
+            print os.path.join(root, f)
+
+    def _filter_files(self, path_spec, files):
+        """
+        Call function with a lsit of files from the filesystem.  If
+        there is an inclusion list, remove files that aren't in that
+        list.  If there is an exclusion list, remove those from the
+        list of files also.
+        """
+        if path_spec.file_inclusions:
+            self._keep(entries=files, keepers=path_spec.file_inclusions)
+        if path_spec.file_exclusions:
+            self._lose(entries=files, losers=path_spec.file_exclusions)
+
+    def _filter_dirs(self, path_spec, dirs):
+        """
+        Call function with full list of sub-directories from
+        filesystem.  If there is an inclusion list, only keep the dirs
+        that are in that list.  If there is an exlusion list, remove
+        them from dirs also.
+        """
+        if path_spec.dir_inclusions:
+            self._keep(entries=dirs, keepers=path_spec.dir_inclusions)
+        if path_spec.dir_exclusions:
+            self._lose(entries=dirs, losers=path_spec.dir_exclusions)
+
+    def _get_path_spec(self, path_specs, path):
+        for path_spec in path_specs:
+            if path_spec.directory == path:
+                return path_spec
+        return None
+
+    def _lose(self, entries, losers):
+        orig_entries = entries[:]
+        for e in orig_entries:
+            if e in losers:
+                entries.remove(e)
+
+    def _keep(self, entries, keepers):
+        orig_entries = entries[:]
+        for e in orig_entries:
+            if not e in keepers:
+                entries.remove(e)
+
+
+
+def load_config(finder, filename):
+    """
+    Load a config from filename or stdin
+    """
+    if filename == '-':
+        config_file = sys.stdin;
+    elif os.path.isfile(filename):
+        config_file = open(filename)
+    else:
+        sys.stderr.write('Unable to find config file %s\n' % filename)
+        return -1
+    config = config_file.read()
+    # Allow separation of commands by semi-colon
+    config = re.sub(';', '\n', config)
+    for line in config.splitlines():
+        if re.match('^#', line):
+            continue
+        finder.config(line)
+    return 0
+
+
+
+def main():
+    """
+    
+    """
+    parser = optparse.OptionParser()
+    parser.add_option('-c', '--config', help='find path spec config file')
+    (options, args) = parser.parse_args()
+
+    if len(args):
+        start_dir = args[0]
+    else:
+        start_dir = '.'
+
+    finder = Finder(start_dir)
+
+    if options.config:
+        error = load_config(finder, options.config)
+        if error:
+            sys.exit(-1)
+    finder.find()
+
+
+
+if __name__ == "__main__":
+    main()

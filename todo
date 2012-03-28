@@ -1,0 +1,9 @@
+* Add ability to select directories or files
+* Add ability to use variables
+* [done] Add multiple dir levels after 'include' or 'exclude' commands
+* Add abbrevs for commands
+* Add curly brace expansion
+* Add regular experssion handling for names
+* Add flags like files=no
+* Change dir lists to comma separated values?  would help with space handling
+* 

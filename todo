@@ -4,6 +4,10 @@
 * Add abbrevs for commands
 * Add curly brace expansion
 * Add regular experssion handling for names
-* Add flags like files=no
+* Add flags like files=no, recurse=yes
 * Change dir lists to comma separated values?  would help with space handling
-* 
+* Use MIME type lists from http://reference.sitepoint.com/html/mime-types-full
+* Create an interactive mode with completion on commands, directories and files
+* Add 'diff' ability so only the additional files from a new command are added
+  and no other paths are even walked.  Could do a similar thing on file removal?
+  Think of the feature as 'incremental update'.

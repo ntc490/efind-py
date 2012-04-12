@@ -263,7 +263,7 @@ class Finder:
         elif command_words[command_word_offset] == 'exclude':
             self._exclude(directory, command_words[command_word_offset + 1:])
         elif command_words[command_word_offset] == 'filter':
-            self._set_filter(command_words[command_word_offset + 1])
+            self.set_filter(command_words[command_word_offset + 1])
         else:
             sys.stderr.write("invalid command: %s\n" % command)
 
@@ -280,6 +280,14 @@ class Finder:
                 self._filter_dirs(path_spec, directories)
                 self._filter_files(path_spec, files)
             self._print_files(root, files)
+
+    def set_filter(self, filter_name):
+        """
+        Filter all files based on one of the defined file extension filters
+        """
+        for filter in FILE_TYPES:
+            if filter.name == filter_name:
+                self.extension_filter = filter
 
     def _include(self, path, sub_paths):
         spec = self._get_path_spec(self.path_specs, path)
@@ -316,11 +324,6 @@ class Finder:
         # Pull any trailing dir separators off
         path = re.sub('%c$' % os.sep, '', path)
         return path
-
-    def _set_filter(self, filter_name):
-        for filter in FILE_TYPES:
-            if filter.name == filter_name:
-                self.extension_filter = filter
 
     def _print_files(self, root, files):
         for f in files:
@@ -400,6 +403,7 @@ def main():
     """
     parser = optparse.OptionParser()
     parser.add_option('-c', '--config', help='find path spec config file')
+    parser.add_option('-f', '--filter', help='set file extension filter')
     (options, args) = parser.parse_args()
 
     if len(args):
@@ -408,6 +412,9 @@ def main():
         start_dir = '.'
 
     finder = Finder(start_dir)
+
+    if options.filter:
+        finder.set_filter(options.filter)
 
     if options.config:
         error = load_config(finder, options.config)

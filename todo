@@ -11,3 +11,30 @@
 * Add 'diff' ability so only the additional files from a new command are added
   and no other paths are even walked.  Could do a similar thing on file removal?
   Think of the feature as 'incremental update'.
+* List file_type filters
+* Switch to docopt
+* Use .efind dir as a "repo" to contain current config.  Running efind causes it
+  to look up the dir heirarchy until it finds a repo - then operate on
+  subdirectories from there.
+* Optimize filter defs to allow multiple levels for "at" and "include" clauses
+* Add "anchor" tag that can be used to look for the start of a config
+* Include other configs?
+* Clone, template push and pull configs from a centralized "repo"
+* Rotate/translate allows you to move config to a different directory level
+* Copy configs by name and/or path
+* Enable/disable configs at the same level?
+* Merge configs?
+* Ammend things from command line
+* Pop into interactive mode?
+* Inheritance up or down dir levels?
+* Trigger pipe into other commands or source other commands
+* Hooks: on-start, on-find-file, on-complete
+* Define default config
+
+Repos:
+* default config
+* configs
+* subcommands
+* hooks
+* pipes: input and output
+* filters

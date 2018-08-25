@@ -9,10 +9,10 @@ again.
 
 I thought about the problem for a while and hacked up some Python to
 get easier control over file list generation.  You shouldn't even have
-to traverse directories you don't want, IMHO.  My new tool, 'efind' or
-Enhanced Find lets you specify actions at directories of your choice.
-The 'config' file I use to get a file list from the kernel, for
-example, is shown below.
+to traverse directories you don't want, IMHO.  'efind', or Enhanced
+Find, lets you specify actions at directories of your choice.  The
+'config' file I use to get a file list from the kernel, for example,
+is shown below.
 
 filter C
 include arch include drivers block init kernel lib mm net

@@ -26,12 +26,13 @@ nathan underscore crapo at yahoo mail
 """
 
 class FileExtensionFilter:
-    def __init__(self, extensions=None, name=''):
+    def __init__(self, extensions=None, name='', alt_names=[]):
         """
         Create a new object to filter files based on their extension name.  Object must have
         a name.  Can be crated with a list of extensions.  Extensions can be added later.
         """
         self.name = name
+        self.alt_names = alt_names
         self.regex = None
         self.extensions = sets.Set()
         if extensions is not None:
@@ -61,7 +62,15 @@ class FileExtensionFilter:
         self.extensions = sets.Set()
         self._compile_allow_all_regex()
 
-    def is_match(self, filename):
+    def is_name_match(self, name):
+        """
+        Check arg against filter names
+        """
+        if name == self.name or name in self.alt_names:
+            return True
+        return False
+
+    def is_file_match(self, filename):
         """
         Determine if a filename has one of the desired extensions.
         """
@@ -88,72 +97,69 @@ class FileExtensionFilter:
 """
 Common groups of extensions for users to leverage
 """
-pics = FileExtensionFilter(extensions="""
-ai bmp dds drw dxf eps gif icn ico icon
-indd j2c j2k jfi jfif jif jiff jng jp2
-jpc jpe jpeg jpf jpg jpx jtf mng pct pdn
-png psd psp svg tga tif tiff xbm
-""", name='pics')
-pictures = FileExtensionFilter(pics.extensions, 'pictures')
-playlist = FileExtensionFilter("""
-asx b4s m3u m3u8 pls wax
-wmx wpl xspf
-""", name='playlist')
-archive = FileExtensionFilter("""
-7z arc arj bzip2 cab chm cpio gz gzip iso
-lzh msi rar rpm sea sit sitx tar wim z zip
-""", name='archive')
-audio = FileExtensionFilter("""
-aac ac3 aif aiff ape atrac au dss dts dvf
-flac gsm iff m4a m4p mid midi mka mp1 mp2
-mp3 mpa msv ogg oma omg ra ram vox wav wma
-""", name='audio')
-documents = FileExtensionFilter("""
-abw doc docx dot mdb mde odb odc odf odg
-odi odm odp ods odt pdf pot ppt pptx ps
-qxd qxp rtf xls xlsx xlt
-""", name='documents')
-executable = FileExtensionFilter("""
-bat com exe
-""", name='executable')
-programming = FileExtensionFilter("""
-adb ada ads asm bas bb bmx c cbl cc cgi
-cls cob cpp cs csproj cxx d dpr e efs
-egt el f f77 f90 for frm frx ftn ged gm6
-gmd gmk gmi h hpp hs hxx inc java js
-jsp l lisp m m4 mi n p pas php php3
-php4 php5 phps phtml piv pl pm pp prg
-py rc rc2 resx s sce sci scm skb skc
-skd skf skg ski skk skm sko skp skq sks
-skt skz sin spin stk vap vb vbg vbp
-vbproj vbs vcproj vdproj vip y
-""", name='programming')
-object = FileExtensionFilter("""
-a o
-""", name='object')
-cplus_plus = FileExtensionFilter("""
-cpp cxx h hpp
-""", name='c++')
-c = FileExtensionFilter("""
-c h
-""", name='C')
-video = FileExtensionFilter("""
-3gp asf avi divx dv flv m1v m2ts m2v m4v
-mkv mov mp4 mpe mpeg mpg mts ogm qt rm
-ts vob wmv
-""", name='video')
-web = FileExtensionFilter("""
-asp chm css dhtml htm html jhtml js jsp
-jspx mht mhtml php php3 php4 php5 phtml
-rhtml rjs sht shtm shtml xht xhtml
-""", name='web')
-text = FileExtensionFilter("""
-log txt
-""", name='text')
-
-FILE_TYPES = [pics, pictures, playlist, archive, audio,
-              documents, executable, programming,
-              object, cplus_plus, c, video, web, text]
+FILE_TYPES = [
+    FileExtensionFilter(extensions="""
+    ai bmp dds drw dxf eps gif icn ico icon
+    indd j2c j2k jfi jfif jif jiff jng jp2
+    jpc jpe jpeg jpf jpg jpx jtf mng pct pdn
+    png psd psp svg tga tif tiff xbm
+    """, name='pics', alt_names=['pictures',]),
+    FileExtensionFilter("""
+    asx b4s m3u m3u8 pls wax
+    wmx wpl xspf
+    """, name='playlist'),
+    FileExtensionFilter("""
+    7z arc arj bzip2 cab chm cpio gz gzip iso
+    lzh msi rar rpm sea sit sitx tar wim z zip
+    """, name='archive'),
+    FileExtensionFilter("""
+    aac ac3 aif aiff ape atrac au dss dts dvf
+    flac gsm iff m4a m4p mid midi mka mp1 mp2
+    mp3 mpa msv ogg oma omg ra ram vox wav wma
+    """, name='audio'),
+    FileExtensionFilter("""
+    abw doc docx dot mdb mde odb odc odf odg
+    odi odm odp ods odt pdf pot ppt pptx ps
+    qxd qxp rtf xls xlsx xlt
+    """, name='documents'),
+    FileExtensionFilter("""
+    bat com exe
+    """, name='executable'),
+    FileExtensionFilter("""
+    adb ada ads asm bas bb bmx c cbl cc cgi
+    cls cob cpp cs csproj cxx d dpr e efs
+    egt el f f77 f90 for frm frx ftn ged gm6
+    gmd gmk gmi h hpp hs hxx inc java js
+    jsp l lisp m m4 mi n p pas php php3
+    php4 php5 phps phtml piv pl pm pp prg
+    py rc rc2 resx s sce sci scm skb skc
+    skd skf skg ski skk skm sko skp skq sks
+    skt skz sin spin stk vap vb vbg vbp
+    vbproj vbs vcproj vdproj vip y
+    """, name='programming'),
+    FileExtensionFilter("""
+    a o
+    """, name='object'),
+    FileExtensionFilter("""
+    cpp cxx h hpp
+    """, name='c++'),
+    FileExtensionFilter("""
+    c h
+    """, name='C'),
+    FileExtensionFilter("""
+    3gp asf avi divx dv flv m1v m2ts m2v m4v
+    mkv mov mp4 mpe mpeg mpg mts ogm qt rm
+    ts vob wmv
+    """, name='video'),
+    FileExtensionFilter("""
+    asp chm css dhtml htm html jhtml js jsp
+    jspx mht mhtml php php3 php4 php5 phtml
+    rhtml rjs sht shtm shtml xht xhtml
+    """, name='web'),
+    FileExtensionFilter("""
+    log txt
+    """, name='text'),
+]
 
 
 class PathSpec:
@@ -289,8 +295,10 @@ class Finder:
         Filter all files based on one of the defined file extension filters
         """
         for filter in FILE_TYPES:
-            if filter.name == filter_name:
+            if filter.is_name_match(filter_name):
                 self.extension_filter = filter
+        if self.extension_filter is None:
+            raise ValueError('Invalid filter name: %s' % filter_name)
 
     def _include(self, path, sub_paths):
         spec = self._get_path_spec(self.path_specs, path)
@@ -330,7 +338,7 @@ class Finder:
 
     def _print_files(self, root, files):
         for f in files:
-            if self.extension_filter and not self.extension_filter.is_match(f):
+            if self.extension_filter and not self.extension_filter.is_file_match(f):
                 continue
             print os.path.join(root, f)
 
@@ -417,7 +425,11 @@ def main():
     finder = Finder(start_dir)
 
     if options.filter:
-        finder.set_filter(options.filter)
+        try:
+            finder.set_filter(options.filter)
+        except ValueError as err:
+            sys.stderr.write('%s\n' % err)
+            return -1
 
     if options.config:
         error = load_config(finder, options.config)

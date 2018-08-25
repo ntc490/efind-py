@@ -1,3 +1,7 @@
+# efind
+
+### Why?
+
 Ever find yourself running 'find' and then tacking a million 'greps'
 on the end of it to get the list of files you want?  I use 'find' on
 the Linux Kernel, pipe the output to a file, and then spend 10 minutes
@@ -6,6 +10,9 @@ file for the HW target I'm coding.  But what happens when you add a
 file or two and want them tagged too?  You have to add it manually.
 What happens when you lose the filelist?  Time to generate the list
 again.
+
+
+### Potential Solution
 
 I thought about the problem for a while and hacked up some Python to
 get easier control over file list generation.  You shouldn't even have

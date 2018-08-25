@@ -14,14 +14,14 @@ Find, lets you specify actions at directories of your choice.  The
 'config' file I use to get a file list from the kernel, for example,
 is shown below.
 
-filter C
-include arch include drivers block init kernel lib mm net
-at arch include mips
-at arch/mips include cavium-octeon
-at include include asm linux net
-at drivers include ata base char gpio i2c ide leds misc mtd net of rtc platform serial usb watchdog
-at drivers/net include e1000 octeon phy usb
-at net include 802 core ethernet ipv4 netfilter packet sched
+	filter C
+	include arch include drivers block init kernel lib mm net
+	at arch include mips
+	at arch/mips include cavium-octeon
+	at include include asm linux net
+	at drivers include ata base char gpio i2c ide leds misc mtd net of rtc platform serial usb watchdog
+	at drivers/net include e1000 octeon phy usb
+	at net include 802 core ethernet ipv4 netfilter packet sched
 
 What if you just wanted to do 'efind -f pics' to find all the pictures
 in the current and child dirs?  Now you can with the 'pics' filter,

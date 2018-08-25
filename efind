@@ -262,7 +262,7 @@ class Finder:
             command_word_offset = 2
             # Command must be longer when the 'at' keyword is used
             if len(command_words) < 4:
-                sys.stderr.write("command too short: %s\n" % command)                
+                sys.stderr.write("command too short: %s\n" % command)
                 return -1
         # PathSpec objects must include the root they reference
         directory = os.path.join(self.root, directory)
@@ -410,7 +410,7 @@ def load_config(finder, filename):
 
 def main():
     """
-    
+
     """
     parser = optparse.OptionParser()
     parser.add_option('-c', '--config', help='find path spec config file')

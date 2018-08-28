@@ -3,10 +3,10 @@ import re
 import sets
 import os
 import sys
-import optparse
+from docopt import docopt
 """
 Enhanced Find Utility
-Copyright (C) 2012 Nathan Crapo
+Copyright (C) 2018 Nathan Crapo
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 Contact me at:
 nathan underscore crapo at yahoo mail
 """
+
 
 class FileExtensionFilter:
     def __init__(self, extensions=None, name='', alt_names=[]):
@@ -229,6 +230,13 @@ class Finder:
         self.path_specs = []
         self.extension_filter = None
 
+    def config(self):
+        """Create a new config repo in the current directory with a config
+        called 'default'
+
+        """
+        pass
+
     def config(self, command):
         """
 
@@ -408,34 +416,81 @@ def load_config(finder, filename):
 
 
 
+VERSION="1.0.0"
+USAGE="""
+efind, Copyright (C) 2018 Nathan Crapo
+efind comes with ABSOLUTELY NO WARRANTY; for details
+see GPLv2 header within.  This is free software, and you
+are welcome to redistribute it under certain conditions;
+see header for details.
+
+Usage:
+  efind [-f=FILTER] [-c=NAME] [-p PATH]
+  efind config [-p PATH] [CONFIG]
+  efind ls-configs [-p PATH]
+  efind clone [-p PATH] <CONFIG>
+  efind template [-p PATH] <CONFIG>
+  efind cp [-p PATH] <CONFIG> <PATH>
+  efind mv [-p PATH] <CONFIG> <PATH>
+  efind rm [-p PATH] <CONFIG>
+  efind include [-p PATH] <DIRS>
+  efind exclude [-p PATH] <DIRS>
+  efind enable [-p PATH] <CONFIG>
+  efind disable [-p PATH] <CONFIG>
+  efind (-v | --version)
+
+Commands:
+  config       Select a CONFIG or create a new one if it doesn't exist. Use
+               'default' if no name given.
+  ls-configs   List configs in current repo.
+  clone        Pull template from home repo into current repo and activate
+  template     Push CONFIG to home repo as template for future clone
+  cp           Copy CONFIG to another repo in PATH
+  mv           Move CONFIG to another repo in PATH
+  rm           Delete CONFIG
+  rotate       Move CONFIG to a new repo in PATH and translate internal
+               paths to match
+  include      Add directories to current CONFIG
+  exlcude      Remove directories from current CONFIG
+  enable       Include CONFIG in active config; effectively creating composite
+  disable      Remove CONFIG from active config; reducing composite
+
+Options:
+  -c FILE, --config FILE      efind spec config file
+  -f FILTER, --filter FILTER  file extension filter
+  -p PATH, --path PATH        path to efind repo
+  -v, --version               print app version
+"""
+future_commands = """
+  efind rotate
+"""
+
 def main():
     """
 
     """
-    parser = optparse.OptionParser()
-    parser.add_option('-c', '--config', help='find path spec config file')
-    parser.add_option('-f', '--filter', help='set file extension filter')
-    (options, args) = parser.parse_args()
-
-    if len(args):
-        start_dir = args[0]
-    else:
-        start_dir = '.'
+    args = docopt(USAGE, version=VERSION)
+    print args
+    start_dir = args['--path'] or "."
 
     finder = Finder(start_dir)
 
-    if options.filter:
+    if args['--filter']:
         try:
-            finder.set_filter(options.filter)
+            finder.set_filter(args['--filter'])
         except ValueError as err:
             sys.stderr.write('%s\n' % err)
             return -1
 
-    if options.config:
-        error = load_config(finder, options.config)
+    if args['--config']:
+        error = load_config(finder, args['--config'])
         if error:
             sys.exit(-1)
-    finder.find()
+
+    if args['config']:
+        finder.config()
+    else:
+        finder.find()
 
 
 

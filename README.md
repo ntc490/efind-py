@@ -1,5 +1,13 @@
 # efind
 
+## feat/hommage
+
+Ability to search upwards from cwd to $HOME and look for a repository.
+A repository is a directory named .efind.
+* create ancestry_find_repo()
+* flesh out app usage - switch to docopt
+* flesh out repo support and grab config from there
+
 ### Why?
 
 Ever find yourself running 'find' and then tacking a million 'greps'

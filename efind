@@ -228,7 +228,7 @@ class Finder:
         """
         self.root = root
         self.path_specs = []
-        self.extension_filter = None
+        self.file_type = None
 
     def config(self):
         """Create a new config repo in the current directory with a config
@@ -256,8 +256,8 @@ class Finder:
         at . include drivers include documentation
         include drivers include
         at src/common exclude i2c-base.c
-        filter pictures
-        filter programming;at src include foo bar
+        type pictures
+        type programming;at src include foo bar
         """
         command_words = command.split()
         command_word_offset = 0
@@ -279,15 +279,15 @@ class Finder:
             self._include(directory, command_words[command_word_offset + 1:])
         elif command_words[command_word_offset] == 'exclude':
             self._exclude(directory, command_words[command_word_offset + 1:])
-        elif command_words[command_word_offset] == 'filter':
-            self.set_filter(command_words[command_word_offset + 1])
+        elif command_words[command_word_offset] == 'type':
+            self.set_file_type(command_words[command_word_offset + 1])
         else:
             sys.stderr.write("invalid command: %s\n" % command)
 
     def find(self):
         """
         Start locating files or directories using the PathSpec and
-        global filter and print results to stdout.
+        file type filter and print results to stdout.
         """
         path_specs = self.path_specs[:]
         for root, directories, files in os.walk(self.root, topdown=True):
@@ -298,15 +298,15 @@ class Finder:
                 self._filter_files(path_spec, files)
             self._print_files(root, files)
 
-    def set_filter(self, filter_name):
+    def set_file_type(self, file_type):
         """
-        Filter all files based on one of the defined file extension filters
+        Narrow results based on file extensions
         """
-        for filter in FILE_TYPES:
-            if filter.is_name_match(filter_name):
-                self.extension_filter = filter
-        if self.extension_filter is None:
-            raise ValueError('Invalid filter name: %s' % filter_name)
+        for ftype in FILE_TYPES:
+            if ftype.is_name_match(file_type):
+                self.file_type = ftype
+        if self.file_type is None:
+            raise ValueError('Invalid file type: %s' % file_type)
 
     def _include(self, path, sub_paths):
         spec = self._get_path_spec(self.path_specs, path)
@@ -346,7 +346,7 @@ class Finder:
 
     def _print_files(self, root, files):
         for f in files:
-            if self.extension_filter and not self.extension_filter.is_file_match(f):
+            if self.file_type and not self.file_type.is_file_match(f):
                 continue
             print os.path.join(root, f)
 
@@ -425,8 +425,8 @@ are welcome to redistribute it under certain conditions;
 see header for details.
 
 Usage:
-  efind [-f=FILTER] [-c=NAME] [-p PATH]
-  efind config [-p PATH] [CONFIG]
+  efind [-t=TYPES] [-c=NAME] [-p PATH]
+  efind config [-d] [-p PATH] <CONFIG>
   efind ls-configs [-p PATH]
   efind clone [-p PATH] <CONFIG>
   efind template [-p PATH] <CONFIG>
@@ -457,12 +457,29 @@ Commands:
 
 Options:
   -c FILE, --config FILE      efind spec config file
-  -f FILTER, --filter FILTER  file extension filter
+  -d, --delete                delete specified config
+  -t TYPE, --type TYPE        narrow to file type
   -p PATH, --path PATH        path to efind repo
   -v, --version               print app version
 """
 future_commands = """
   efind rotate
+  efind hook add {complete|file|dir|each} <command>
+  efind hook del {complete|file|dir|each}
+"""
+
+meta_structure = """
+.efind/
+    default   - default config
+    templates - store configs as templates.  cannot be run from this dir.
+"""
+
+config_syntax = """
+[at <dir>] include [dirs]
+[at <dir>] exclude [dirs]
+type <file-type>
+layer <config>
+hook {complete|file|dir|each} <command>
 """
 
 def main():
@@ -475,9 +492,9 @@ def main():
 
     finder = Finder(start_dir)
 
-    if args['--filter']:
+    if args['--type']:
         try:
-            finder.set_filter(args['--filter'])
+            finder.set_file_type(args['--type'])
         except ValueError as err:
             sys.stderr.write('%s\n' % err)
             return -1

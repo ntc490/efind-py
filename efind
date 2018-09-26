@@ -213,6 +213,33 @@ class PathSpec:
         self.file_exclusions.update([path])
 
 
+class Repo:
+    def __init__(self):
+        self.path = ''
+
+    def auto_locate(self, path):
+        """
+        Walk up from start_dir to end_dir and look for repo.  Usually a dir
+        named .efind
+        """
+        efind_repo = '.efind'
+        start_dir = '.'
+        end_dir = os.getenv('HOME')
+        if path is not None:
+            start_dir = path
+        if efind_repo in os.listdir('.'):
+            self.path = os.path.join(os.getcwd(), efind_repo)
+            return self.path
+        return None
+
+    def config(self, name, path='.'):
+        """
+        Select config named 'name' in repo - OR create a new config in
+        repo if one doesn't exist with that name already.
+        """
+        pass
+
+
 class Finder:
     """
     This class is used to find files and directories.  It filters
@@ -489,6 +516,10 @@ def main():
     args = docopt(USAGE, version=VERSION)
     print args
     start_dir = args['--path'] or "."
+
+    repo = Repo()
+    repo.auto_locate(args['--path'])
+    print 'repo_dir:', repo.path
 
     finder = Finder(start_dir)
 

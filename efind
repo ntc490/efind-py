@@ -215,7 +215,7 @@ class PathSpec:
 
 class Repo:
     def __init__(self):
-        self.path = ''
+        self.repo_dir = ''
 
     def auto_locate(self, path):
         """
@@ -228,9 +228,30 @@ class Repo:
         if path is not None:
             start_dir = path
         if efind_repo in os.listdir('.'):
-            self.path = os.path.join(os.getcwd(), efind_repo)
-            return self.path
+            self.repo_dir = os.path.join(os.getcwd(), efind_repo)
+            return self.repo_dir
         return None
+
+    def get_root(self, subtree=False, absolute_path=False):
+        """
+        TODO: impement this
+        Get root of the search
+        """
+        return '.'
+        if not absolute_path:
+            if subtree:
+                return '.'
+            else:
+                return os.path.join(self.repo_dir, '..')
+
+    def get_config_filename(self, name=None):
+        if name is None:
+            name = 'default'
+        return os.path.join(self.get_repo_dir(), name)
+
+    def get_repo_dir(self):
+        """Get repo directory - including .efind portion"""
+        return self.repo_dir
 
     def config(self, name, path='.'):
         """
@@ -452,7 +473,7 @@ are welcome to redistribute it under certain conditions;
 see header for details.
 
 Usage:
-  efind [-t=TYPES] [-c=NAME] [-p PATH]
+  efind [-t=TYPES] [-c=NAME] [-r PATH] [-s] [-a]
   efind config [-d] [-p PATH] <CONFIG>
   efind ls-configs [-p PATH]
   efind clone [-p PATH] <CONFIG>
@@ -486,7 +507,9 @@ Options:
   -c FILE, --config FILE      efind spec config file
   -d, --delete                delete specified config
   -t TYPE, --type TYPE        narrow to file type
-  -p PATH, --path PATH        path to efind repo
+  -r PATH, --repo PATH        path to efind repo
+  -s, --subtree               only output files from cwd down
+  -a, --absolute              use absolute paths
   -v, --version               print app version
 """
 future_commands = """
@@ -515,12 +538,13 @@ def main():
     """
     args = docopt(USAGE, version=VERSION)
     print args
-    start_dir = args['--path'] or "."
 
     repo = Repo()
-    repo.auto_locate(args['--path'])
-    print 'repo_dir:', repo.path
+    repo.auto_locate(args['--repo'])
+    print 'repo_dir:', repo.get_repo_dir()
 
+    start_dir = repo.get_root(args['--subtree'], args['--absolute'])
+    print 'start_dir:', start_dir
     finder = Finder(start_dir)
 
     if args['--type']:
@@ -530,10 +554,11 @@ def main():
             sys.stderr.write('%s\n' % err)
             return -1
 
-    if args['--config']:
-        error = load_config(finder, args['--config'])
-        if error:
-            sys.exit(-1)
+    print 'Config filename:', repo.get_config_filename(args['--config'])
+    finder.config('exclude .efind')
+    error = load_config(finder, repo.get_config_filename(args['--config']))
+    if error:
+        sys.exit(-1)
 
     if args['config']:
         finder.config()

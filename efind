@@ -217,19 +217,19 @@ class Repo:
     def __init__(self):
         self.repo_dir = ''
 
-    def auto_locate(self, path):
+    def auto_locate(self, path=None):
         """
         Walk up from start_dir to end_dir and look for repo.  Usually a dir
         named .efind
         """
         efind_repo = '.efind'
-        start_dir = '.'
-        end_dir = os.getenv('HOME')
-        if path is not None:
-            start_dir = path
-        if efind_repo in os.listdir(start_dir):
-            self.repo_dir = os.path.join(start_dir, efind_repo)
-            return self.repo_dir
+        search_dir = path or '.'
+        home_dir = os.getenv('HOME') or os.path.sep
+        while os.path.abspath(search_dir) != home_dir:
+            if efind_repo in os.listdir(search_dir):
+                self.repo_dir = os.path.join(search_dir, efind_repo)
+                return self.repo_dir
+            search_dir = os.path.join(search_dir, os.path.pardir)
         return None
 
     def get_root(self, subtree=False, absolute_path=False):

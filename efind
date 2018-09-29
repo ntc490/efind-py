@@ -227,8 +227,8 @@ class Repo:
         end_dir = os.getenv('HOME')
         if path is not None:
             start_dir = path
-        if efind_repo in os.listdir('.'):
-            self.repo_dir = os.path.join(os.getcwd(), efind_repo)
+        if efind_repo in os.listdir(start_dir):
+            self.repo_dir = os.path.join(start_dir, efind_repo)
             return self.repo_dir
         return None
 

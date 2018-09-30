@@ -553,10 +553,7 @@ def main():
     if error:
         sys.exit(-1)
 
-    if args['config']:
-        finder.config()
-    else:
-        finder.find(args['--subtree'])
+    finder.find(args['--subtree'])
 
 
 

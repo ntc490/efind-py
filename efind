@@ -277,13 +277,6 @@ class Finder:
         self.path_specs = []
         self.file_type = None
 
-    def config(self):
-        """Create a new config repo in the current directory with a config
-        called 'default'
-
-        """
-        pass
-
     def config(self, command):
         """
 

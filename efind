@@ -314,7 +314,7 @@ class Finder:
                 return -1
         # PathSpec objects must include the root they reference
         directory = os.path.join(self.root, directory)
-        directory = self._clean_path(directory)
+        directory = os.path.normpath(directory)
         if command_words[command_word_offset] == 'include':
             self._include(directory, command_words[command_word_offset + 1:])
         elif command_words[command_word_offset] == 'exclude':
@@ -331,7 +331,7 @@ class Finder:
         """
         path_specs = self.path_specs[:]
         for root, directories, files in os.walk(self.root, topdown=True):
-            path_spec_name = self._clean_path(root)
+            path_spec_name = os.path.normpath(root)
             path_spec = self._get_path_spec(path_specs, path_spec_name)
             if path_spec:
                 self._filter_dirs(path_spec, directories)
@@ -376,13 +376,6 @@ class Finder:
                 sys.stderr.write("cannot add sub-directories of subdirectories - skipping: %s)\n" % sub_path)
                 continue
             spec.exclude(sub_path)
-
-    def _clean_path(self, path):
-        if not path:
-            path = "."
-        # Pull any trailing dir separators off
-        path = re.sub('%c$' % os.sep, '', path)
-        return path
 
     def _print_files(self, root, files):
         for f in files:

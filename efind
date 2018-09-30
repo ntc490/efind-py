@@ -250,11 +250,29 @@ class Repo:
         "Read CURRENT config from repo"
         cfg_file = os.path.join(self.get_repo_dir(), self.current_config)
         try:
-            config = file(cfg_file).readline()
+            config = open(cfg_file, "r").readline()
             config = config.replace('\n', '')
         except:
             config = self.default_config
         return config
+
+    def _set_current(self, name):
+        "Set CURRENT config from repo"
+        if name is None: return
+
+        cfg_file = os.path.join(self.get_repo_dir(), name)
+        curr_file = os.path.join(self.get_repo_dir(), self.current_config)
+        # Update current ref
+        try:
+            open(curr_file, "w+").write(name)
+        except:
+            pass
+        # Create empty config file if not present
+        if not os.path.exists(cfg_file):
+            try:
+                open(cfg_file, "w+")
+            except:
+                pass
 
     def get_config_filename(self, name=None):
         if name is None:
@@ -265,12 +283,12 @@ class Repo:
         """Get repo directory - including .efind portion"""
         return self.repo_dir
 
-    def config(self, name, path='.'):
+    def config(self, name):
         """
         Select config named 'name' in repo - OR create a new config in
         repo if one doesn't exist with that name already.
         """
-        pass
+        self._set_current(name)
 
 
 class Finder:
@@ -481,8 +499,8 @@ see header for details.
 
 Usage:
   efind [-t=TYPES] [-c=NAME] [-r PATH] [-s] [-a]
-  efind config [-d] [-p PATH] <CONFIG>
-  efind ls-configs [-p PATH]
+  efind config [-d] [-r PATH] <CONFIG>
+  efind ls-config [-r PATH]
   efind clone [-p PATH] <CONFIG>
   efind template [-p PATH] <CONFIG>
   efind cp [-p PATH] <CONFIG> <PATH>
@@ -497,7 +515,7 @@ Usage:
 Commands:
   config       Select a CONFIG or create a new one if it doesn't exist. Use
                'default' if no name given.
-  ls-configs   List configs in current repo.
+  ls-config    List configs in current repo.
   clone        Pull template from home repo into current repo and activate
   template     Push CONFIG to home repo as template for future clone
   cp           Copy CONFIG to another repo in PATH
@@ -543,10 +561,12 @@ def main():
     """
 
     """
+    error = -1
     args = docopt(USAGE, version=VERSION)
 
     repo = Repo()
     repo.auto_locate(args['--repo'])
+
     start_dir = repo.get_root(args['--absolute'])
     subtree = None
     if args['--subtree']:
@@ -560,12 +580,20 @@ def main():
             sys.stderr.write('%s\n' % err)
             return -1
 
-    finder.config('exclude .efind')
-    error = load_config(finder, repo.get_config_filename(args['--config']))
-    if error:
-        sys.exit(-1)
+    if args['config']:
+        cfg = args['<CONFIG>']
+        repo.config(cfg)
+        sys.stderr.write('Set config to %s\n' % cfg)
+        sys.exit(0)
+    elif args['ls-config']:
+        repo.list_configs()
+        sys.exit(0)
+    else:
+        finder.config('exclude .efind')
+        error = load_config(finder, repo.get_config_filename(args['--config']))
+        finder.find(subtree)
 
-    finder.find(subtree)
+    sys.exit(error)
 
 
 

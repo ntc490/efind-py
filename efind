@@ -504,7 +504,7 @@ are welcome to redistribute it under certain conditions;
 see header for details.
 
 Usage:
-  efind [-t=TYPES] [-c=NAME] [-r PATH] [-s] [-a]
+  efind [-t=TYPES] [-c=NAME] [-r PATH] [-s] [-a] [ SUBTREE ]
   efind config [-d] [-r PATH] <CONFIG>
   efind ls-configs [-r PATH]
   efind clone [-p PATH] <CONFIG>
@@ -575,7 +575,9 @@ def main():
 
     start_dir = repo.get_root(args['--absolute'])
     subtree = None
-    if args['--subtree']:
+    if args['SUBTREE']:
+        subtree = os.path.abspath(args['SUBTREE'])
+    elif args['--subtree']:
         subtree = os.getcwd()
 
     finder = Finder(start_dir)

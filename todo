@@ -1,6 +1,5 @@
 * Add ability to select directories or files
 * Add ability to use variables
-* [done] Add multiple dir levels after 'include' or 'exclude' commands
 * Add abbrevs for commands
 * Add curly brace expansion
 * Add regular experssion handling for names
@@ -12,10 +11,6 @@
   and no other paths are even walked.  Could do a similar thing on file removal?
   Think of the feature as 'incremental update'.
 * List file_type filters
-* Switch to docopt
-* Use .efind dir as a "repo" to contain current config.  Running efind causes it
-  to look up the dir heirarchy until it finds a repo - then operate on
-  subdirectories from there.
 * Optimize filter defs to allow multiple levels for "at" and "include" clauses
 * Add "anchor" tag that can be used to look for the start of a config
 * Include other configs?
@@ -29,7 +24,17 @@
 * Inheritance up or down dir levels?
 * Trigger pipe into other commands or source other commands
 * Hooks: on-start, on-find-file, on-complete
-* Define default config
+* Create templates dir in home .efind directory.  Copy directories under that
+  using the name of the root_dir so multiple 'default' configs can be stored
+  as templates.
+X Define default config
+X Switch to docopt
+X Add multiple dir levels after 'include' or 'exclude' commands
+X Use .efind dir as a "repo" to contain current config.  Running efind causes it
+  to look up the dir heirarchy until it finds a repo - then operate on
+  subdirectories from there.
+X Switch between different configurations
+
 
 Repos:
 * default config

@@ -1,3 +1,4 @@
+* Add ability to optionally set a subtree dir from the efind command by path
 * Add ability to select directories or files
 * Add ability to use variables
 * Add abbrevs for commands

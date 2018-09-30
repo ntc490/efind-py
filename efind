@@ -227,7 +227,7 @@ class Repo:
         home_dir = os.getenv('HOME') or os.path.sep
         while os.path.abspath(search_dir) != home_dir:
             if efind_repo in os.listdir(search_dir):
-                self.repo_dir = os.path.join(search_dir, efind_repo)
+                self.repo_dir = os.path.abspath(os.path.join(search_dir, efind_repo))
                 return self.repo_dir
             search_dir = os.path.join(search_dir, os.path.pardir)
         return None
@@ -237,12 +237,12 @@ class Repo:
         TODO: impement this
         Get root of the search
         """
-        return '.'
-        if not absolute_path:
-            if subtree:
-                return '.'
-            else:
-                return os.path.join(self.repo_dir, '..')
+        root = os.path.join(self.repo_dir, os.path.pardir)
+        relpath = os.path.relpath(root, os.getcwd())
+        if absolute_path:
+            return os.path.abspath(relpath)
+        else:
+            return relpath
 
     def get_config_filename(self, name=None):
         if name is None:
@@ -537,7 +537,6 @@ def main():
 
     """
     args = docopt(USAGE, version=VERSION)
-    print args
 
     repo = Repo()
     repo.auto_locate(args['--repo'])

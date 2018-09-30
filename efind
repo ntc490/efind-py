@@ -290,6 +290,12 @@ class Repo:
         """
         self._set_current(name)
 
+    def ls_configs(self):
+        "Produce a list of configs from repo"
+        configs = os.listdir(self.get_repo_dir())
+        configs = [ c for c in configs if c != self.current_config ]
+        return configs
+
 
 class Finder:
     """
@@ -500,7 +506,7 @@ see header for details.
 Usage:
   efind [-t=TYPES] [-c=NAME] [-r PATH] [-s] [-a]
   efind config [-d] [-r PATH] <CONFIG>
-  efind ls-config [-r PATH]
+  efind ls-configs [-r PATH]
   efind clone [-p PATH] <CONFIG>
   efind template [-p PATH] <CONFIG>
   efind cp [-p PATH] <CONFIG> <PATH>
@@ -515,7 +521,7 @@ Usage:
 Commands:
   config       Select a CONFIG or create a new one if it doesn't exist. Use
                'default' if no name given.
-  ls-config    List configs in current repo.
+  ls-configs   List configs in current repo.
   clone        Pull template from home repo into current repo and activate
   template     Push CONFIG to home repo as template for future clone
   cp           Copy CONFIG to another repo in PATH
@@ -585,8 +591,10 @@ def main():
         repo.config(cfg)
         sys.stderr.write('Set config to %s\n' % cfg)
         sys.exit(0)
-    elif args['ls-config']:
-        repo.list_configs()
+    elif args['ls-configs']:
+        configs = repo.ls_configs()
+        for c in configs:
+            sys.stderr.write('%s\n' % c)
         sys.exit(0)
     else:
         finder.config('exclude .efind')

@@ -324,13 +324,16 @@ class Finder:
         else:
             sys.stderr.write("invalid command: %s\n" % command)
 
-    def find(self):
+    def find(self, subtree=False):
         """
         Start locating files or directories using the PathSpec and
         file type filter and print results to stdout.
         """
         path_specs = self.path_specs[:]
+        cwd = os.getcwd()
         for root, directories, files in os.walk(self.root, topdown=True):
+            if subtree and not self._is_subtree(cwd, os.path.abspath(root)):
+                continue
             path_spec_name = os.path.normpath(root)
             path_spec = self._get_path_spec(path_specs, path_spec_name)
             if path_spec:
@@ -376,6 +379,12 @@ class Finder:
                 sys.stderr.write("cannot add sub-directories of subdirectories - skipping: %s)\n" % sub_path)
                 continue
             spec.exclude(sub_path)
+
+    def _is_subtree(self, tree, subtree):
+        if os.path.commonprefix([tree, subtree]) == tree:
+            return True
+        else:
+            return False
 
     def _print_files(self, root, files):
         for f in files:
@@ -547,7 +556,7 @@ def main():
     if args['config']:
         finder.config()
     else:
-        finder.find()
+        finder.find(args['--subtree'])
 
 
 

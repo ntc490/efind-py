@@ -232,9 +232,8 @@ class Repo:
             search_dir = os.path.join(search_dir, os.path.pardir)
         return None
 
-    def get_root(self, subtree=False, absolute_path=False):
+    def get_root(self, absolute_path=False):
         """
-        TODO: impement this
         Get root of the search
         """
         root = os.path.join(self.repo_dir, os.path.pardir)
@@ -542,7 +541,7 @@ def main():
     repo.auto_locate(args['--repo'])
     print 'repo_dir:', repo.get_repo_dir()
 
-    start_dir = repo.get_root(args['--subtree'], args['--absolute'])
+    start_dir = repo.get_root(args['--absolute'])
     print 'start_dir:', start_dir
     finder = Finder(start_dir)
 

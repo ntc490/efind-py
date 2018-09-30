@@ -247,6 +247,7 @@ class Repo:
             return relpath
 
     def _read_current(self):
+        "Read CURRENT config from repo"
         cfg_file = os.path.join(self.get_repo_dir(), self.current_config)
         try:
             config = file(cfg_file).readline()

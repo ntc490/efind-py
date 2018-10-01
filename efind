@@ -504,7 +504,7 @@ are welcome to redistribute it under certain conditions;
 see header for details.
 
 Usage:
-  efind [-t=TYPES] [-c=NAME] [-r PATH] [-s] [-a] [ SUBTREE ]
+  efind [-t=TYPES] [-c=NAME] [-r PATH] [-a] [ SUBTREE ]
   efind config [-d] [-r PATH] <CONFIG>
   efind ls-configs [-r PATH]
   efind clone [-p PATH] <CONFIG>
@@ -539,7 +539,6 @@ Options:
   -d, --delete                delete specified config
   -t TYPE, --type TYPE        narrow to file type
   -r PATH, --repo PATH        path to efind repo
-  -s, --subtree               only output files from cwd down
   -a, --absolute              use absolute paths
   -v, --version               print app version
 """
@@ -577,8 +576,6 @@ def main():
     subtree = None
     if args['SUBTREE']:
         subtree = os.path.abspath(args['SUBTREE'])
-    elif args['--subtree']:
-        subtree = os.getcwd()
 
     finder = Finder(start_dir)
     if args['--type']:

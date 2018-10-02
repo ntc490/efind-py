@@ -256,23 +256,23 @@ class Repo:
             config = self.default_config
         return config
 
-    def _set_current(self, name):
+    def _set_current(self, name, is_new=False):
         "Set CURRENT config from repo"
         if name is None: return
 
         cfg_file = os.path.join(self.get_repo_dir(), name)
         curr_file = os.path.join(self.get_repo_dir(), self.current_config)
-        # Update current ref
-        try:
-            open(curr_file, "w+").write(name)
-        except:
-            pass
+
         # Create empty config file if not present
-        if not os.path.exists(cfg_file):
-            try:
-                open(cfg_file, "w+")
-            except:
-                pass
+        if not is_new:
+            if not os.path.exists(cfg_file):
+                raise ValueError('No config named %s\n' % name)
+        else:
+            if not os.path.exists(cfg_file):
+                open(cfg_file, "w")
+
+        # Update current ref
+        open(curr_file, "w").write(name)
 
     def get_config_filename(self, name=None):
         if name is None:
@@ -283,19 +283,35 @@ class Repo:
         """Get repo directory - including .efind portion"""
         return self.repo_dir
 
-    def config(self, name):
+    def config(self, name, is_new=False):
         """
         Select config named 'name' in repo - OR create a new config in
         repo if one doesn't exist with that name already.
         """
-        self._set_current(name)
+        self._set_current(name, is_new)
 
-    def ls_configs(self):
-        "Produce a list of configs from repo"
+    def config_list(self):
+        """
+        Produce a list of configs from repo
+        """
         configs = os.listdir(self.get_repo_dir())
         configs = [ c for c in configs if c != self.current_config ]
         return configs
 
+    def config_del(self, name):
+        """
+        Delete config by name.  Revert to default config if necessary
+        """
+        if name == 'default':
+            raise ValueError('Cannot delete default config\n')
+        cfg_file = os.path.join(self.get_repo_dir(), name)
+        curr_file = os.path.join(self.get_repo_dir(), self.current_config)
+        try:
+            os.unlink(cfg_file)
+        except:
+            raise ValueError('Cannot remove config %s\n' % name)
+        if self._read_current() == name:
+            self._set_current(self.default_config)
 
 class Finder:
     """
@@ -378,15 +394,18 @@ class Finder:
                 self._filter_files(path_spec, files)
             self._print_files(root, files)
 
-    def set_file_type(self, file_type):
+    def set_file_type(self, file_type=None):
         """
         Narrow results based on file extensions
         """
+        if file_type is None:
+            self.file_type = None
+            return
         for ftype in FILE_TYPES:
             if ftype.is_name_match(file_type):
                 self.file_type = ftype
         if self.file_type is None:
-            raise ValueError('Invalid file type: %s' % file_type)
+            raise ValueError('Invalid file type %s\n' % file_type)
 
     def _include(self, path, sub_paths):
         spec = self._get_path_spec(self.path_specs, path)
@@ -477,13 +496,7 @@ def load_config(finder, filename):
     """
     Load a config from filename or stdin
     """
-    if filename == '-':
-        config_file = sys.stdin;
-    elif os.path.isfile(filename):
-        config_file = open(filename)
-    else:
-        sys.stderr.write('Unable to find config file %s\n' % filename)
-        return -1
+    config_file = open(filename, 'r')
     config = config_file.read()
     # Allow separation of commands by semi-colon
     config = re.sub(';', '\n', config)
@@ -504,9 +517,13 @@ are welcome to redistribute it under certain conditions;
 see header for details.
 
 Usage:
-  efind [-t=TYPE] [-c=NAME] [-r PATH] [-a] [ SUBTREE ]
-  efind config [-d] [-r PATH] <CONFIG>
-  efind ls-configs [-r PATH]
+  efind [-t=TYPE] [-c=NAME] [-a] [ SUBTREE ]
+  efind [-r REPO ] config use <CONFIG>
+  efind [-r REPO ] config new <CONFIG>
+  efind config rm <CONFIG>
+  efind config ls
+  efind config mv <OLD> <NEW>
+  efind config cp <OLD> <NEW>
   efind clone [-p PATH] <CONFIG>
   efind template [-p PATH] <CONFIG>
   efind cp [-p PATH] <CONFIG> <PATH>
@@ -519,9 +536,7 @@ Usage:
   efind (-v | --version)
 
 Commands:
-  config       Select a CONFIG or create a new one if it doesn't exist. Use
-               'default' if no name given.
-  ls-configs   List configs in current repo.
+  config       Operate on configs
   clone        Pull template from home repo into current repo and activate
   template     Push CONFIG to home repo as template for future clone
   cp           Copy CONFIG to another repo in PATH
@@ -535,8 +550,7 @@ Commands:
   disable      Remove CONFIG from active config; reducing composite
 
 Options:
-  -c FILE, --config FILE      efind spec config file
-  -d, --delete                delete specified config
+  -c CONFIG, --config CONFIG  use CONFIG for one command
   -t TYPE, --type TYPE        narrow to file type
   -r PATH, --repo PATH        path to efind repo
   -a, --absolute              use absolute paths
@@ -562,43 +576,57 @@ layer <config>
 hook {complete|file|dir|each} <command>
 """
 
+def cmd_config(repo, args):
+    cfg = args['<CONFIG>']
+
+    if args['ls']:
+        configs = repo.config_list()
+        for c in configs:
+            sys.stderr.write('%s\n' % c)
+    elif args['use']:
+        repo.config(cfg, is_new=False)
+        sys.stderr.write('Set config to %s\n' % cfg)
+    elif args['new']:
+        repo.config(cfg, is_new=True)
+        sys.stderr.write('Create new config %s\n' % cfg)
+    elif args['rm']:
+        repo.config_del(cfg)
+        sys.stderr.write('Removed config named %s\n' % cfg)
+
+
 def main():
     """
 
     """
-    error = -1
     args = docopt(USAGE, version=VERSION)
 
-    repo = Repo()
-    repo.auto_locate(args['--repo'])
+    error = 0
+    try:
+        repo = Repo()
+        repo.auto_locate(args['--repo'])
 
-    start_dir = repo.get_root(args['--absolute'])
-    subtree = None
-    if args['SUBTREE']:
-        subtree = os.path.abspath(args['SUBTREE'])
+        start_dir = repo.get_root(args['--absolute'])
+        subtree = None
+        if args['SUBTREE']:
+            subtree = os.path.abspath(args['SUBTREE'])
 
-    finder = Finder(start_dir)
-    if args['--type']:
-        try:
+        finder = Finder(start_dir)
+        if args['--type']:
             finder.set_file_type(args['--type'])
-        except ValueError as err:
-            sys.stderr.write('%s\n' % err)
-            return -1
 
-    if args['config']:
-        cfg = args['<CONFIG>']
-        repo.config(cfg)
-        sys.stderr.write('Set config to %s\n' % cfg)
-        sys.exit(0)
-    elif args['ls-configs']:
-        configs = repo.ls_configs()
-        for c in configs:
-            sys.stderr.write('%s\n' % c)
-        sys.exit(0)
-    else:
-        finder.config('exclude .efind')
-        error = load_config(finder, repo.get_config_filename(args['--config']))
-        finder.find(subtree)
+        # Command demux
+        if args['config']:
+            cmd_config(repo, args)
+        else:
+            try:
+                load_config(finder, repo.get_config_filename(args['--config']))
+            except IOError:
+                raise ValueError('Invalid config %s\n' % args['--config'])
+            finder.find(subtree)
+
+    except ValueError as e:
+        sys.stderr.write(e.message)
+        error = -1
 
     sys.exit(error)
 

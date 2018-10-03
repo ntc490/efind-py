@@ -580,9 +580,13 @@ def cmd_config(repo, args):
     cfg = args['<CONFIG>']
 
     if args['ls']:
+        current_cfg = repo._read_current()
         configs = repo.config_list()
         for c in configs:
-            sys.stderr.write('%s\n' % c)
+            if c == current_cfg:
+                sys.stderr.write('* %s\n' % c)
+            else:
+                sys.stderr.write('  %s\n' % c)
     elif args['use']:
         repo.config(cfg, is_new=False)
         sys.stderr.write('Set config to %s\n' % cfg)

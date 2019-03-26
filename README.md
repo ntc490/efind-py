@@ -1,5 +1,10 @@
 # efind
 
+I've abandoned this project to work on a new version in Go.
+I'll likely make that repo public once it's more mature.
+
+## Archive
+
 ### Why?
 
 Ever find yourself running 'find' and then tacking a million 'greps'
